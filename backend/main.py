@@ -47,10 +47,25 @@ def startup():
 @app.post("/activity/")
 def add_activity(activity: Activity):
     conn = get_db()
-    conn.execute(
-        "INSERT INTO activities (user_id, app_name, window_title, duration) VALUES (?, ?, ?, ?)",
-        (activity.user_id, activity.app_name, activity.window_title, activity.duration)
+    cursor = conn.execute(
+        "SELECT id, duration FROM activities WHERE user_id = ? AND app_name = ? AND window_title = ?",
+        (activity.user_id, activity.app_name, activity.window_title)
     )
+    row = cursor.fetchone()
+
+    if row:
+        # Update existing duration
+        new_duration = row["duration"] + activity.duration
+        conn.execute(
+            "UPDATE activities SET duration = ? WHERE id = ?",
+            (new_duration, row["id"])
+        )
+    else:
+        # Insert new activity
+        conn.execute(
+            "INSERT INTO activities (user_id, app_name, window_title, duration) VALUES (?, ?, ?, ?)",
+            (activity.user_id, activity.app_name, activity.window_title, activity.duration)
+        )
     conn.commit()
     conn.close()
     return {"status": "success"}
