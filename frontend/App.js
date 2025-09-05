@@ -19,9 +19,7 @@ function App() {
             <th>User Name</th>
             <th>App Name</th>
             <th>Window Title</th>
-            <th>URL</th>
-            <th>Start Time</th>
-            <th>End Time</th>
+            <th>Duration</th>
           </tr>
         </thead>
         <tbody>
@@ -30,9 +28,7 @@ function App() {
               <td>{activity.user_id}</td>
               <td>{activity.app_name}</td>
               <td>{activity.window_title}</td>
-              <td>{activity.url || '-'}</td>
-              <td>{activity.start_time}</td>
-              <td>{activity.end_time}</td>
+              <td>{activity.duration}</td>
             </tr>
           ))}
         </tbody>

@@ -29,8 +29,7 @@ class Activity(BaseModel):
     user_id: str
     app_name: str
     window_title: str
-    start_time: str
-    end_time: str
+    duration: int
 
 @app.on_event("startup")
 def startup():
@@ -40,8 +39,7 @@ def startup():
         user_id TEXT,
         app_name TEXT,
         window_title TEXT,
-        start_time TEXT,
-        end_time TEXT
+        duration INTEGER
     )''')
     conn.commit()
     conn.close()
@@ -50,8 +48,8 @@ def startup():
 def add_activity(activity: Activity):
     conn = get_db()
     conn.execute(
-        "INSERT INTO activities (user_id, app_name, window_title, start_time, end_time) VALUES (?, ?, ?, ?, ?)",
-        (activity.user_id, activity.app_name, activity.window_title, activity.start_time, activity.end_time)
+        "INSERT INTO activities (user_id, app_name, window_title, duration) VALUES (?, ?, ?, ?)",
+        (activity.user_id, activity.app_name, activity.window_title, activity.duration)
     )
     conn.commit()
     conn.close()
@@ -60,7 +58,7 @@ def add_activity(activity: Activity):
 @app.get("/activities/", response_model=List[Activity])
 def get_activities():
     conn = get_db()
-    cursor = conn.execute("SELECT user_id, app_name, window_title, start_time, end_time FROM activities")
+    cursor = conn.execute("SELECT user_id, app_name, window_title, duration FROM activities")
     activities = [Activity(**dict(row)) for row in cursor.fetchall()]
     conn.close()
     return activities
