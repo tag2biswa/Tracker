@@ -1,0 +1,81 @@
+.App {
+  font-family: Arial, sans-serif;
+  padding: 20px;
+}
+
+.title {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.container {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.dashboard {
+  flex: 2;
+}
+
+.stats {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  padding: 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  color: #333;
+}
+
+.blue { background-color: #a3d8f4; }
+.pink { background-color: #f8b3c9; }
+.purple { background-color: #c9b6e4; }
+
+.activity-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.activity-table th,
+.activity-table td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: left;
+}
+
+.tracked-manager {
+  flex: 1;
+  border-left: 2px solid black;
+  padding-left: 20px;
+}
+
+.tracked-manager form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tracked-manager input {
+  padding: 6px;
+  border: 1px solid #ccc;
+}
+
+.tracked-manager button {
+  padding: 8px;
+  background-color: #ffe599;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.app-list {
+  margin-top: 15px;
+  border: 1px solid #ddd;
+  padding: 10px;
+}
