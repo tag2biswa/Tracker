@@ -94,16 +94,19 @@ def get_tracked_identifiers():
     return identifiers
 
 @app.post("/tracked-identifiers/")
-def add_identifier(identifier: str):
+def add_identifier(data: IdentifierInput):
     conn = get_db()
     try:
-        conn.execute("INSERT INTO tracked_identifiers (identifier) VALUES (?)", (identifier,))
+        conn.execute(
+            "INSERT INTO tracked_identifiers (identifier) VALUES (?)",
+            (data.identifier,)
+        )
         conn.commit()
     except sqlite3.IntegrityError:
         raise HTTPException(status_code=400, detail="Identifier already exists")
     finally:
         conn.close()
-    return {"status": "added"}
+    return {"status": "added", "identifier": data.identifier}
 
 @app.delete("/tracked-identifiers/")
 def remove_identifier(data: IdentifierInput):

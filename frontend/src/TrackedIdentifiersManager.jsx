@@ -1,14 +1,48 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 function TrackedIdentifiersManager() {
-  const [apps, setApps] = useState(["App 1", "App 2", "App 3"]);
+  const [apps, setApps] = useState([]); // Initialize with an empty array
   const [input, setInput] = useState("");
 
-  const handleSubmit = (e) => {
+  // Fetch tracked identifiers from the backend
+  useEffect(() => {
+    const fetchTrackedIdentifiers = async () => {
+      try {
+        const response = await fetch("/tracked-identifiers/"); // Proxy will forward to backend
+        if (!response.ok) {
+          throw new Error("Failed to fetch tracked identifiers");
+        }
+        const data = await response.json();
+        setApps(data); // Update state with fetched data
+      } catch (error) {
+        console.error("Error fetching tracked identifiers:", error);
+      }
+    };
+
+    fetchTrackedIdentifiers();
+  }, []); // Empty dependency array ensures this runs only once
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (input.trim() !== "" && !apps.includes(input)) {
-      setApps([...apps, input.trim()]);
-      setInput("");
+      try {
+        const response = await fetch("/tracked-identifiers/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ identifier: input.trim() }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to add identifier");
+        }
+
+        setApps([...apps, input.trim()]); // Update state with the new identifier
+        setInput("");
+      } catch (error) {
+        console.error("Error adding identifier:", error);
+      }
     }
   };
 
