@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import './App.css';
+import TrackedIdentifiersManager from './TrackedIdentifiersManager'; 
 
 function App() {
   const [activities, setActivities] = useState([]);

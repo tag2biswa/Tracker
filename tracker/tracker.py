@@ -14,6 +14,17 @@ last_app = None
 last_title = None
 start_time = None
 
+def fetch_tracked_identifiers():
+    try:
+        response = requests.get("http://localhost:3000/tracked-identifiers/")
+        if response.status_code == 200:
+            identifiers = [item.lower() for item in response.json()]
+            print("Fetched tracked identifiers:", identifiers)
+            return identifiers
+    except Exception as e:
+        print("Failed to fetch tracked identifiers:", e)
+    return []
+
 # Helper to get active window info
 def get_active_window():
     hwnd = win32gui.GetForegroundWindow()
@@ -25,18 +36,12 @@ def get_active_window():
             return app_name, window_title
     return None, None
 
-TRACKED_IDENTIFIERS = [
-    "chrome.exe", "msedge.exe", "notepad.exe", "Code.exe", "excel.exe", "winword.exe",
-    "Google Chrome", "Microsoft Edge", "Notepad", "Visual Studio Code", "Excel", "Word"
-]
-BROWSERS = ["chrome.exe", "msedge.exe"]
-
 def is_tracked(app_name, window_title):
     if not TRACKED_IDENTIFIERS:
         return True
     app_name = app_name.lower()
     window_title = window_title.lower()
-    return any(identifier.lower() in app_name or identifier.lower() in window_title for identifier in TRACKED_IDENTIFIERS)
+    return any(identifier in app_name or identifier in window_title for identifier in TRACKED_IDENTIFIERS)
 
 def extract_tab_title(app_name, window_title):
     if app_name.lower() in BROWSERS:
@@ -46,31 +51,34 @@ def extract_tab_title(app_name, window_title):
     return window_title
 
 def extract_clean_title(app_name, window_title):
+    if not app_name or not window_title:
+        return "Unknown"
     if app_name.lower() in BROWSERS:
-        # For browsers, extract tab name
         if " - " in window_title:
             return window_title.split(" - ")[0]
         return window_title
     else:
-        # For other apps, extract last segment (usually app name)
         if " - " in window_title:
             return window_title.split(" - ")[-1].strip()
         return window_title
 
+TRACKED_IDENTIFIERS = fetch_tracked_identifiers()
+BROWSERS = ["chrome.exe", "msedge.exe"]
 usage_summary = defaultdict(timedelta)
 
 while True:
     app_name, window_title = get_active_window()
     now = datetime.now().isoformat()
 
-    if not is_tracked(app_name, window_title):
+    if not app_name or not window_title:
         time.sleep(2)
         continue
 
     enriched_title = extract_clean_title(app_name, window_title)
 
+    # Always send payload if previous app was tracked
     if (app_name, enriched_title) != (last_app, last_title):
-        if last_app and start_time:
+        if last_app and start_time and is_tracked(last_app, last_title):
             duration = datetime.fromisoformat(now) - datetime.fromisoformat(start_time)
             key = f"{last_app} | {last_title}"
             usage_summary[key] += duration
@@ -88,7 +96,13 @@ while True:
             except Exception as e:
                 print("Failed to send data:", e)
 
-        last_app, last_title = app_name, enriched_title
-        start_time = now
-        last_url = None
+        # Update current app only if it's tracked
+        if is_tracked(app_name, enriched_title):
+            last_app, last_title = app_name, enriched_title
+            start_time = now
+            last_url = None
+        else:
+            last_app = None
+            last_title = None
+            start_time = None
     time.sleep(2)

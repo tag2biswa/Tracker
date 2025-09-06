@@ -4,7 +4,6 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List
-
 import sqlite3
 
 app = FastAPI()
@@ -30,6 +29,9 @@ class Activity(BaseModel):
     window_title: str
     duration: int
 
+class IdentifierInput(BaseModel):
+    identifier: str
+
 @app.on_event("startup")
 def startup():
     conn = get_db()
@@ -40,6 +42,12 @@ def startup():
         window_title TEXT,
         duration INTEGER
     )''')
+
+    conn.execute('''CREATE TABLE IF NOT EXISTS tracked_identifiers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        identifier TEXT UNIQUE
+    )''')
+
     conn.commit()
     conn.close()
 
@@ -76,3 +84,33 @@ def get_activities():
     activities = [Activity(**dict(row)) for row in cursor.fetchall()]
     conn.close()
     return activities
+
+@app.get("/tracked-identifiers/")
+def get_tracked_identifiers():
+    conn = get_db()
+    cursor = conn.execute("SELECT identifier FROM tracked_identifiers")
+    identifiers = [row["identifier"] for row in cursor.fetchall()]
+    conn.close()
+    return identifiers
+
+@app.post("/tracked-identifiers/")
+def add_identifier(identifier: str):
+    conn = get_db()
+    try:
+        conn.execute("INSERT INTO tracked_identifiers (identifier) VALUES (?)", (identifier,))
+        conn.commit()
+    except sqlite3.IntegrityError:
+        raise HTTPException(status_code=400, detail="Identifier already exists")
+    finally:
+        conn.close()
+    return {"status": "added"}
+
+@app.delete("/tracked-identifiers/")
+def remove_identifier(data: IdentifierInput):
+    conn = get_db()
+    cursor = conn.execute("DELETE FROM tracked_identifiers WHERE identifier = ?", (data.identifier,))
+    conn.commit()
+    conn.close()
+    if cursor.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Identifier not found")
+    return {"status": "removed", "identifier": data.identifier}
