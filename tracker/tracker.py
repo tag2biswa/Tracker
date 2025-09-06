@@ -63,10 +63,20 @@ def extract_clean_title(app_name, window_title):
         return window_title
 
 TRACKED_IDENTIFIERS = fetch_tracked_identifiers()
+last_refresh_date = None
 BROWSERS = ["chrome.exe", "msedge.exe"]
 usage_summary = defaultdict(timedelta)
 
 while True:
+    # Refresh tracked identifiers daily
+    ''' now_dt = datetime.now()
+    now_iso = now_dt.isoformat()
+
+    if now_dt.hour == 12 and (last_refresh_date != now_dt.date()):
+        TRACKED_IDENTIFIERS = fetch_tracked_identifiers()
+        last_refresh_date = now_dt.date()
+        print("🔄 Refreshed tracked identifiers at 12 PM:", TRACKED_IDENTIFIERS) '''
+
     app_name, window_title = get_active_window()
     now = datetime.now().isoformat()
 
