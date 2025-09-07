@@ -616,5 +616,124 @@ body {
   transform: translateY(-2px);
 }
 
+/* ===== Fixed Tracker Dashboard Header ===== */
+.dashboard-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: #ffffff;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+/* Push content down so it doesn't hide behind header */
+.dashboard-content {
+  padding-top: 80px; /* height of header */
+}
+
+/* === Keep title fixed, scroll only activity list === */
+
+/* Make the main app layout respect viewport height */
+.App {
+  /* ensure App fills viewport so sticky positioning works */
+  min-height: 100vh;
+  display: block;
+}
+
+/* Sticky header containing the title (works with existing .title element) */
+.title {
+  position: sticky;
+  top: 16px;             /* distance from top — adjust if you have top nav */
+  z-index: 50;
+  background: transparent; /* if you have a glass background this avoids white bar */
+  margin: 0 0 12px 0;
+  padding: 4px 0;
+}
+
+/* Ensure the primary container can layout left/right panels while leaving room for sticky header */
+.container {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  /* allow the container to grow below the sticky header */
+  margin-top: 8px;
+}
+
+/* Make left panel a column so top-cards + activity card stack vertically,
+   and allow the activity card to expand to a reasonable height */
+.dashboard-wrapper {
+  flex: 0 0 60%;
+  max-width: 60%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Top cards row should not scroll — keep its natural height */
+.top-cards-row {
+  z-index: 2; /* above background */
+}
+
+/* Make the activity card a column where the header is fixed and the table scrolls */
+.dashboard-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  /* give it a maximum height so the inner table can scroll.
+     The calculation reserves space for header/top cards and right panel — adjust 380px if needed. */
+  max-height: calc(100vh - 200px);
+}
+
+/* Header area of the card stays visible; the table area becomes scrollable and fills remaining space */
+.dashboard-card .dashboard-header {
+  flex: 0 0 auto;
+}
+
+/* Table wrapper becomes scrollable and uses remaining space inside the card */
+.dashboard-card .table-wrap {
+  flex: 1 1 auto;
+  overflow: auto;
+  /* set a sensible minimum/maximum height. Adjust as needed. */
+  min-height: 200px;
+  max-height: calc(100vh - 340px);
+  padding-right: 8px; /* avoids scrollbar overlapping content */
+}
+
+/* Improve table scroll appearance on small screens */
+.table-wrap::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+.table-wrap::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.12);
+  border-radius: 8px;
+}
+
+/* Keep right-panel independent (so it's not affected by left panel scroll) */
+.right-panel {
+  flex: 0 0 40%;
+  max-width: 40%;
+  align-self: flex-start;
+}
+
+/* Optional: ensure the sticky title doesn't cover content when small screens */
+@media (max-width: 900px) {
+  .dashboard-card {
+    max-height: calc(100vh - 220px);
+  }
+  .dashboard-card .table-wrap {
+    max-height: calc(100vh - 380px);
+  }
+  .title {
+    top: 8px;
+  }
+}
+
+
+
+
 
 
