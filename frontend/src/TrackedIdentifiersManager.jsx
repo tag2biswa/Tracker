@@ -1,10 +1,11 @@
-// /src/TrackedIdentifiersManager.jsx
 import React, { useState, useEffect } from "react";
 import ConfirmModal from "./ConfirmModal";
+import { USE_DUMMY_DATA } from "./config";
 
 /**
- * Rich TrackedIdentifiersManager (right panel)
- * This component's root uses className="right-panel" so CSS can set it to 40% width.
+ * TrackedIdentifiersManager
+ * - Shows tracked apps (dummy or real backend)
+ * - Only a prominent Delete button (no edit)
  */
 function TrackedIdentifiersManager() {
   const [apps, setApps] = useState([]);
@@ -15,16 +16,26 @@ function TrackedIdentifiersManager() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  useEffect(() => { fetchTrackedIdentifiers(); }, []);
+  const DUMMY_APPS = ["Chrome", "VSCode", "Slack", "Spotify"];
+
+  useEffect(() => {
+    if (USE_DUMMY_DATA) {
+      setApps(DUMMY_APPS);
+    } else {
+      fetchTrackedIdentifiers();
+    }
+  }, []);
 
   const fetchTrackedIdentifiers = async () => {
-    setLoading(true); setError(null);
+    setLoading(true);
+    setError(null);
     try {
-      const res = await fetch("/tracked-identifiers/");
-      if (!res.ok) throw new Error("Failed to fetch tracked identifiers");
-      const data = await res.json();
+      const response = await fetch("/tracked-identifiers/");
+      if (!response.ok) throw new Error("Failed to fetch tracked identifiers");
+      const data = await response.json();
       setApps(Array.isArray(data) ? data : []);
     } catch (err) {
+      console.error(err);
       setError(err.message || "Unknown error");
     } finally {
       setLoading(false);
@@ -34,8 +45,18 @@ function TrackedIdentifiersManager() {
   const handleSubmit = async (e) => {
     e && e.preventDefault();
     const val = input.trim();
-    if (val === "") return;
-    if (apps.includes(val)) { setError("Already tracked"); return; }
+    if (!val) return;
+    if (apps.includes(val)) {
+      setError("Already tracked");
+      return;
+    }
+
+    if (USE_DUMMY_DATA) {
+      setApps((prev) => [val, ...prev]);
+      setInput("");
+      setError(null);
+      return;
+    }
 
     try {
       const response = await fetch("/tracked-identifiers/", {
@@ -44,28 +65,46 @@ function TrackedIdentifiersManager() {
         body: JSON.stringify({ identifier: val }),
       });
       if (!response.ok) throw new Error("Failed to add identifier");
-      setApps(prev => [val, ...prev]);
-      setInput(""); setError(null);
+      setApps((prev) => [val, ...prev]);
+      setInput("");
+      setError(null);
     } catch (err) {
+      console.error(err);
       setError(err.message || "Could not add");
     }
   };
 
-  const confirmDelete = (appName) => { setAppToDelete(appName); setShowModal(true); };
+  const confirmDelete = (appName) => {
+    setAppToDelete(appName);
+    setShowModal(true);
+  };
 
   const handleDelete = async () => {
     if (!appToDelete) return;
+
+    if (USE_DUMMY_DATA) {
+      setApps((prev) => prev.filter((a) => a !== appToDelete));
+      setAppToDelete(null);
+      setShowModal(false);
+      return;
+    }
+
     try {
-      const res = await fetch(`/tracked-identifiers/${encodeURIComponent(appToDelete)}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed to delete identifier");
-      setApps(prev => prev.filter(a => a !== appToDelete));
-      setAppToDelete(null); setShowModal(false);
+      const response = await fetch(`/tracked-identifiers/${encodeURIComponent(appToDelete)}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Failed to delete identifier");
+      setApps((prev) => prev.filter((a) => a !== appToDelete));
+      setAppToDelete(null);
+      setShowModal(false);
     } catch (err) {
-      setError(err.message || "Could not delete"); setShowModal(false);
+      console.error(err);
+      setError(err.message || "Could not delete");
+      setShowModal(false);
     }
   };
 
-  const filtered = apps.filter(a => a.toLowerCase().includes(search.toLowerCase()));
+  const filtered = apps.filter((a) => a.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <aside className="right-panel">
@@ -81,10 +120,16 @@ function TrackedIdentifiersManager() {
               placeholder="e.g., Chrome, VSCode, Slack"
               aria-label="App name to track"
             />
-            <button className="btn primary" type="submit">Add</button>
+            <button className="btn primary" type="submit">
+              Add
+            </button>
           </div>
 
-          {error && <div className="error-msg" role="alert" style={{ marginTop: 8 }}>{error}</div>}
+          {error && (
+            <div className="error-msg" role="alert" style={{ marginTop: 8 }}>
+              {error}
+            </div>
+          )}
         </form>
 
         <div className="search-row" style={{ marginTop: 12 }}>
@@ -95,26 +140,47 @@ function TrackedIdentifiersManager() {
             placeholder="Search tracked apps..."
             aria-label="Search tracked apps"
           />
-          <button className="btn ghost" onClick={fetchTrackedIdentifiers} type="button" title="Refresh">⟳</button>
+          <button
+            className="btn ghost"
+            onClick={() => {
+              if (USE_DUMMY_DATA) {
+                setApps(DUMMY_APPS);
+                setError(null);
+              } else {
+                fetchTrackedIdentifiers();
+              }
+            }}
+            type="button"
+            title="Refresh"
+          >
+            ⟳
+          </button>
         </div>
 
         <div className="list-scroll" style={{ marginTop: 12 }}>
           {loading && <div className="loader">Loading…</div>}
           {!loading && filtered.length === 0 && <div className="empty-state">No tracked apps. Add one above ✨</div>}
 
-          {!loading && filtered.map((app, i) => (
-            <div className="app-card" key={app + i}>
-              <div>
-                <div className="app-name">{app}</div>
-                <div className="app-meta">Tracked</div>
-              </div>
+          {!loading &&
+            filtered.map((app, i) => (
+              <div className="app-card" key={app + i}>
+                <div>
+                  <div className="app-name">{app}</div>
+                  <div className="app-meta">Tracked</div>
+                </div>
 
-              <div className="app-actions">
-                <button className="btn small" onClick={() => setInput(app)} title="Edit (prefill)">✎</button>
-                <button className="btn danger small" onClick={() => confirmDelete(app)} title="Delete">🗑</button>
+                <div className="app-actions">
+                  <button
+                    className="btn danger"
+                    style={{ fontWeight: "bold", padding: "6px 12px" }}
+                    onClick={() => confirmDelete(app)}
+                    title="Delete"
+                  >
+                    🗑 Delete
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
         </div>
       </div>
 
