@@ -8,7 +8,7 @@ from collections import defaultdict
 from datetime import timedelta, datetime
 
 
-API_URL = "http://localhost:3000/activity/"
+API_URL = "http://localhost:8000/activity/"
 
 last_app = None
 last_title = None
@@ -16,7 +16,7 @@ start_time = None
 
 def fetch_tracked_identifiers():
     try:
-        response = requests.get("http://localhost:3000/tracked-identifiers/")
+        response = requests.get("http://localhost:8000/tracked-identifiers/")
         if response.status_code == 200:
             identifiers = [item.lower() for item in response.json()]
             print("Fetched tracked identifiers:", identifiers)
