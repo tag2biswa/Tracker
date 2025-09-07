@@ -4,8 +4,8 @@ import React, { useState, useEffect, useMemo } from "react";
 /**
  * AppTrackerDashboard.jsx
  * - Left panel (dashboard + top summary cards)
- * - Expects `activities` prop from parent App.jsx
  * - Shows top app per window (7d, 30d, 180d) and top users for that app
+ * - Adds progress bars showing each top user's share of the app's total duration
  */
 function AppTrackerDashboard({ activities: propActivities = [] }) {
   const [selectedUser, setSelectedUser] = useState("All");
@@ -76,10 +76,13 @@ function AppTrackerDashboard({ activities: propActivities = [] }) {
     if (!maxApp) return null;
 
     const userTotals = appUserTotals[maxApp] || {};
-    const topUsers = Object.entries(userTotals)
+    // create array sorted by duration desc
+    const usersSorted = Object.entries(userTotals)
       .map(([user, dur]) => ({ user, duration: dur }))
-      .sort((x, y) => y.duration - x.duration)
-      .slice(0, 3);
+      .sort((x, y) => y.duration - x.duration);
+
+    // topUsers (we'll include up to 5 here; UI shows top 3 but having more is ok)
+    const topUsers = usersSorted.slice(0, 5);
 
     return { app: maxApp, duration: maxDur, topUsers };
   };
@@ -144,7 +147,7 @@ function AppTrackerDashboard({ activities: propActivities = [] }) {
 
   const totalDuration = sortedActivities.reduce((s, a) => s + (Number(a.duration) || 0), 0);
 
-  // --- Top card renderer (shows app + top users) ---
+  // --- Top card renderer (with divider, heading, badges, podium, and progress bars) ---
   const renderTopCard = (title, topData, label) => {
     if (!topData) {
       return (
@@ -165,14 +168,42 @@ function AppTrackerDashboard({ activities: propActivities = [] }) {
           <div className="top-meta muted small">{label} • {formatDuration(Math.round(topData.duration))}</div>
         </div>
 
+        <hr className="top-divider" />
+        <div className="top-users-heading">Top users</div>
+
         <div className="top-card-users">
           {topData.topUsers && topData.topUsers.length > 0 ? (
-            topData.topUsers.map((u, i) => (
-              <div key={u.user + i} className="user-row">
-                <span className="user-name">{u.user}</span>
-                <span className="user-duration">{formatDuration(Math.round(u.duration))}</span>
-              </div>
-            ))
+            topData.topUsers.map((u, i) => {
+              // badge and color classes
+              const badgeText = i === 0 ? "👑" : `${i + 1}`;
+              let badgeClass = "user-badge";
+              if (i === 0) badgeClass += " crown-badge";
+              else if (i === 1) badgeClass += " silver-badge";
+              else if (i === 2) badgeClass += " bronze-badge";
+
+              // percent share of app total
+              const pct = topData.duration > 0 ? Math.round((u.duration / topData.duration) * 100) : 0;
+              // small safety clamp
+              const pctClamped = Math.max(0, Math.min(100, pct));
+
+              return (
+                <div key={u.user + i} className={`user-row-wrapper ${i === 0 ? "top-user-highlight" : ""}`}>
+                  <div className="user-row">
+                    <span className={badgeClass}>{badgeText}</span>
+                    <span className="user-name">{u.user}</span>
+                    <span className="user-duration">{formatDuration(Math.round(u.duration))}</span>
+                  </div>
+
+                  {/* progress bar + percent */}
+                  <div className="user-progress-row">
+                    <div className="progress-bar" aria-hidden>
+                      <div className="progress-bar-fill" style={{ width: `${pctClamped}%` }} />
+                    </div>
+                    <div className="progress-percent">{pctClamped}%</div>
+                  </div>
+                </div>
+              );
+            })
           ) : (
             <div className="muted small">No users</div>
           )}
