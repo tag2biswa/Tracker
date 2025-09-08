@@ -732,6 +732,14 @@ body {
   }
 }
 
+/* Small chart card polish */
+.recharts-wrapper {
+  background: transparent;
+  border-radius: 10px;
+  padding: 6px;
+}
+
+
 
 
 
