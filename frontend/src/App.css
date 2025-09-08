@@ -739,6 +739,17 @@ body {
   padding: 6px;
 }
 
+/* legend swatch tweaks */
+.recharts-legend-custom, .custom-legend {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.custom-legend .swatch {
+  width: 12px; height: 12px; border-radius: 3px; display: inline-block; margin-right: 6px;
+}
+
+
 
 
 
