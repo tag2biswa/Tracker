@@ -29,17 +29,17 @@ code {
   margin-top: 12px;
 }
 
-/* Left panel (dashboard) */
+/* Left panel (dashboard) 
 .dashboard-wrapper {
   flex: 0 0 60%;
-  max-width: 60%;
-}
+  max-width: 90%;
+}*/
 
-/* Right panel */
+/* Right panel 
 .right-panel {
   flex: 0 0 40%;
   max-width: 40%;
-}
+}*/
 
 /* Dashboard card */
 .dashboard-card {
@@ -60,12 +60,12 @@ code {
   font-size: 1.2rem;
 }
 
-.dashboard-header {
+/*.dashboard-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 12px;
-}
+}*/
 
 .dashboard-sub {
   display: flex;
@@ -616,24 +616,6 @@ body {
   transform: translateY(-2px);
 }
 
-/* ===== Fixed Tracker Dashboard Header ===== */
-.dashboard-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;
-  background: #ffffff;
-  padding: 16px 20px;
-  border-bottom: 1px solid #e5e7eb;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-}
-
-/* Push content down so it doesn't hide behind header */
-.dashboard-content {
-  padding-top: 80px; /* height of header */
-}
-
 /* === Keep title fixed, scroll only activity list === */
 
 /* Make the main app layout respect viewport height */
@@ -666,7 +648,7 @@ body {
    and allow the activity card to expand to a reasonable height */
 .dashboard-wrapper {
   flex: 0 0 60%;
-  max-width: 60%;
+  max-width: 90%;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -688,9 +670,9 @@ body {
 }
 
 /* Header area of the card stays visible; the table area becomes scrollable and fills remaining space */
-.dashboard-card .dashboard-header {
+/*.dashboard-card .dashboard-header {
   flex: 0 0 auto;
-}
+}*/
 
 /* Table wrapper becomes scrollable and uses remaining space inside the card */
 .dashboard-card .table-wrap {
@@ -748,11 +730,3 @@ body {
 .custom-legend .swatch {
   width: 12px; height: 12px; border-radius: 3px; display: inline-block; margin-right: 6px;
 }
-
-
-
-
-
-
-
-

@@ -106,7 +106,7 @@ function TrackedIdentifiersManager() {
 
   const filtered = apps.filter((a) => a.toLowerCase().includes(search.toLowerCase()));
 
-  return (
+  /*return (
     <aside className="right-panel">
       <div className="right-card">
         <h4 className="right-title">Enter App name to be tracked</h4>
@@ -235,7 +235,7 @@ function TrackedIdentifiersManager() {
         />
       )}
     </aside>
-  );
+  );*/
 }
 
 export default TrackedIdentifiersManager;

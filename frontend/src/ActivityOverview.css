@@ -1,0 +1,79 @@
+/* src/ActivityOverview.css — moved from injected styles */
+
+.ao-card {
+  background: linear-gradient(180deg, #ffffff 0%, #fbfbff 100%);
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(20,20,40,0.06);
+  padding: 18px;
+  box-sizing: border-box;
+}
+
+.ao-header { display:flex; gap:16px; align-items:center; width:100%; }
+.ao-title {
+  font-size:1.15rem;
+  font-weight:700;
+  margin:0;
+  background: linear-gradient(90deg,#6C5CE7,#0984E3);
+  -webkit-background-clip: text;
+  background-clip:text;
+  color:transparent;
+}
+.ao-sub { color:#6b7280; font-size:0.9rem; }
+.ao-top { display:flex; gap:12px; margin-bottom:12px; align-items:center; flex-wrap:wrap; }
+.ao-pulse {
+  width:36px; height:36px; border-radius:10px; display:flex;
+  align-items:center; justify-content:center; color:white; font-weight:700;
+  box-shadow:0 6px 16px rgba(0,0,0,0.06);
+}
+
+.ao-filters { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+.ao-filter-select {
+  padding:8px 10px; border-radius:8px; border:1px solid #e6e9ef; background:white;
+  min-width:120px;
+}
+.ao-pill { background:#f1f5f9; padding:6px 10px; border-radius:999px; font-size:0.85rem; color:#111827; }
+
+.table-wrap {
+  margin-top:12px; width:100%; max-width:100%;
+  overflow-x:auto; -webkit-overflow-scrolling:touch; border-radius:8px;
+}
+
+table.activity-table { width:100%; border-collapse:collapse; min-width: 600px; }
+table.activity-table thead th {
+  text-align:left; padding:10px 12px; font-size:0.9rem; color:#374151;
+  position:sticky; top:0; background:rgba(255,255,255,0.9); backdrop-filter: blur(4px);
+  z-index:2; cursor:pointer;
+}
+table.activity-table tbody tr {
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+table.activity-table tbody tr:hover { transform: translateY(-3px); box-shadow: 0 6px 18px rgba(15,23,42,0.06); }
+table.activity-table td {
+  padding:12px; border-top:1px solid #f1f5f9; vertical-align:middle;
+  word-break:break-word; white-space:normal;
+}
+
+.app-badge { display:inline-flex; align-items:center; gap:8px; padding:6px 8px; border-radius:8px; color:#fff; font-weight:600; font-size:0.85rem; }
+
+.ao-empty { padding:18px; color:#6b7280; text-align:center; }
+
+.ao-card-list { display:flex; flex-direction:column; gap:10px; }
+.ao-activity-card {
+  background:#fff; border-radius:10px; padding:12px;
+  box-shadow:0 6px 18px rgba(15,23,42,0.04); display:flex; gap:12px; align-items:flex-start;
+}
+.ao-activity-meta { font-size:0.85rem; color:#475569; }
+.ao-duration { font-family:monospace; font-weight:700; color:#111827; }
+
+.ao-search { display:flex; align-items:center; gap:8px; background:#fff; border:1px solid #e6e9ef; padding:6px 8px; border-radius:8px; min-width:220px; }
+.ao-search input { border: none; outline: none; font-size:0.95rem; }
+.ao-clear { background: transparent; border: none; color:#374151; cursor:pointer; font-weight:700; }
+
+/* highlight style used by highlightNodes */
+.highlight { background: rgba(250,223,89,0.8); padding: 0 2px; border-radius: 2px; }
+
+@media (max-width:720px) {
+  .ao-header { flex-direction:column; align-items:flex-start; gap:8px; }
+  table.activity-table thead { display:none; }
+  table.activity-table { min-width:100%; }
+}

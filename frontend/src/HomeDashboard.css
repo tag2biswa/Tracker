@@ -1,0 +1,102 @@
+:root {
+  --drawer-width: 250px;
+  --header-height: 64px; /* change this to make header taller/shorter */
+  --bg-drawer: #333;
+  --bg-header: #f4f4f4;
+  --text-color-drawer: #fff;
+}
+
+/* layout root */
+.home-dashboard {
+  display: block;
+  height: 100vh;
+  font-family: Arial, sans-serif;
+  background: #fff;
+  color: #222;
+}
+
+/* Top banner (full width, fixed) */
+.top-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--header-height);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  background-color: var(--bg-header);
+  border-bottom: 1px solid #ddd;
+  z-index: 1000;
+  box-sizing: border-box;
+}
+
+/* Drawer starts below the header */
+.drawer {
+  width: var(--drawer-width);
+  background-color: var(--bg-drawer);
+  color: var(--text-color-drawer);
+  position: fixed;
+  top: var(--header-height); /* important: start below header */
+  left: 0;
+  height: calc(100% - var(--header-height)); /* fill remaining height */
+  overflow-y: auto;
+  box-sizing: border-box;
+  z-index: 900;
+}
+
+/* Drawer nav */
+.drawer-nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.drawer-nav li {
+  padding: 15px;
+  border-bottom: 1px solid #444;
+}
+
+.drawer-nav a {
+  color: var(--text-color-drawer);
+  text-decoration: none;
+  display: block;
+}
+
+/* Main content area */
+.main-content {
+  margin-left: var(--drawer-width); /* account for drawer width */
+  padding-top: var(--header-height); /* push content below fixed header */
+  box-sizing: border-box;
+  min-height: 100vh;
+  /* content should scroll independently */
+}
+
+/* Header content inside banner */
+.top-banner h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+/* small mobile tweak: collapse drawer into top area if viewport too small */
+@media (max-width: 720px) {
+  :root {
+    --drawer-width: 200px;
+  }
+
+  .drawer {
+    width: var(--drawer-width);
+    position: fixed;
+    /* you may want to hide or toggle the drawer via JS for small screens */
+  }
+
+  .main-content {
+    margin-left: var(--drawer-width);
+  }
+}
+
+/* Misc content styles */
+.main-content section {
+  padding: 20px;
+}

@@ -1,14 +1,11 @@
 # main.py
-from fastapi import FastAPI, HTTPException, Query, Form
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 import sqlite3
 from datetime import datetime, timezone, timedelta
 import os
-from passlib.context import CryptContext
-import logging
-from jose import jwt
 
 app = FastAPI(title="Time Tracker API - Master/Detail Schema with Stats")
 
@@ -21,10 +18,6 @@ app.add_middleware(
 )
 
 DB_PATH = os.environ.get("TIME_TRACKER_DB", "time_tracker.db")
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-logging.basicConfig(level=logging.INFO)
 
 def get_db():
     conn = sqlite3.connect(DB_PATH, detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
@@ -86,13 +79,6 @@ def startup():
         CREATE TABLE IF NOT EXISTS tracked_identifiers (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             identifier TEXT UNIQUE
-        )
-    """)
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE,
-            password TEXT
         )
     """)
     conn.commit()
@@ -261,39 +247,3 @@ def stats_most_used(days: int = Query(7, ge=1, le=365)):
         "total_duration": total_duration,
         "top_users": top_users,
     }
-
-# Authentication endpoints
-SECRET_KEY = "replace-this-secret-with-a-real-one"
-ALGORITHM = "HS256"
-
-@app.post("/auth/register/")
-def register_user(username: str, password: str):
-    hashed_password = pwd_context.hash(password)
-    conn = get_db()
-    try:
-        conn.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, hashed_password))
-        conn.commit()
-    except sqlite3.IntegrityError:
-        conn.close()
-        raise HTTPException(status_code=400, detail="Username already exists")
-    conn.close()
-    return {"status": "success", "message": "User registered successfully"}
-
-@app.post("/auth/login/")
-def login_user(username: str = Form(...), password: str = Form(...)):
-    logging.info(f"Attempting login for username: {username}")
-    conn = get_db()
-    cur = conn.cursor()
-    user = cur.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
-    conn.close()
-    if not user:
-        logging.error(f"User not found: {username}")
-        raise HTTPException(status_code=401, detail="Invalid username or password")
-    if not pwd_context.verify(password, user["password"]):
-        logging.error(f"Password mismatch for username: {username}")
-        raise HTTPException(status_code=401, detail="Invalid username or password")
-    logging.info(f"Login successful for username: {username}")
-
-    # Generate a JWT token
-    access_token = jwt.encode({"sub": username}, SECRET_KEY, algorithm=ALGORITHM)
-    return {"status": "success", "message": "Login successful", "access_token": access_token}
