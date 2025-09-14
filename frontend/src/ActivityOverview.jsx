@@ -4,9 +4,11 @@ import "./ActivityOverview.css";
 
 /**
  * ActivityOverview — grouped by app, clickable header to expand/collapse,
- * smooth slide animation for sub-rows, sub-rows styled as indented rows.
+ * - animated staggered subrow fade-in
+ * - avatars for users (initials), collapsed user lists with "+N" and tooltip
+ * - responsive table with no horizontal scroll (table-layout: fixed, truncation)
  *
- * Now includes user(s) information for each subrow (window/title).
+ * Keep previous behaviors: debounced search, grouping, highlight, keyboard accessible.
  */
 
 const API_BASE = (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_API_BASE)
@@ -27,6 +29,13 @@ function hashStringToIndex(s, mod) {
   return mod ? h % mod : 0;
 }
 
+function initials(name) {
+  if (!name) return "?";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 1).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
 export default function ActivityOverview({ activities: propActivities }) {
   const [internalActivities, setInternalActivities] = useState(Array.isArray(propActivities) ? propActivities : []);
   const [loading, setLoading] = useState(false);
@@ -39,12 +48,12 @@ export default function ActivityOverview({ activities: propActivities }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState(searchQuery);
 
-  // expand/collapse state
+  // DEFAULT: collapsed
   const [expandedApps, setExpandedApps] = useState(new Set());
 
-  // refs to measure each app's expanded content
-  const contentRefs = useRef(new Map()); // appName -> DOM node
-  const measuredHeights = useRef(new Map()); // appName -> height in px
+  // refs to measure content
+  const contentRefs = useRef(new Map());
+  const measuredHeights = useRef(new Map());
 
   // debounce search
   useEffect(() => {
@@ -66,7 +75,7 @@ export default function ActivityOverview({ activities: propActivities }) {
     };
   }, []);
 
-  // load activities (if not passed via props)
+  // load activities
   useEffect(() => {
     let aborted = false;
     async function load() {
@@ -208,7 +217,7 @@ export default function ActivityOverview({ activities: propActivities }) {
   };
   const getSortIndicator = (k) => (sortConfig.key !== k ? "↕" : (sortConfig.direction === "asc" ? "↑" : "↓"));
 
-  // grouping (now collects users per window)
+  // grouping and collect users per window
   const groupedByApp = useMemo(() => {
     const map = new Map();
     for (const a of sortedActivities) {
@@ -223,7 +232,6 @@ export default function ActivityOverview({ activities: propActivities }) {
       appEntry.totalDuration += duration;
 
       if (!appEntry.windows.has(window)) {
-        // track users as a Set
         appEntry.windows.set(window, { title: window, totalDuration: 0, lastSeen: date, users: new Set() });
       }
       const winEntry = appEntry.windows.get(window);
@@ -235,7 +243,6 @@ export default function ActivityOverview({ activities: propActivities }) {
     const out = [];
     for (const [appName, data] of map.entries()) {
       const windows = Array.from(data.windows.values()).map(w => {
-        // convert users Set -> sorted array for display
         const usersArr = Array.from(w.users || new Set()).filter(Boolean);
         return { title: w.title, totalDuration: w.totalDuration, lastSeen: w.lastSeen, users: usersArr };
       }).sort((x,y) => y.totalDuration - x.totalDuration);
@@ -259,29 +266,16 @@ export default function ActivityOverview({ activities: propActivities }) {
     return m;
   }, [appList]);
 
-  // when groupedByApp changes, ensure measured heights updated on next paint
+  // measure heights
   useLayoutEffect(() => {
     for (const g of groupedByApp) {
       const node = contentRefs.current.get(g.appName);
-      if (node) {
-        measuredHeights.current.set(g.appName, node.scrollHeight);
-      } else {
-        measuredHeights.current.set(g.appName, 0);
-      }
+      if (node) measuredHeights.current.set(g.appName, node.scrollHeight);
+      else measuredHeights.current.set(g.appName, 0);
     }
   }, [groupedByApp, isMobile]);
 
-  // initialize expandedApps with all apps (but keep user's manual toggles if present)
-  useEffect(() => {
-    setExpandedApps(prev => {
-      const next = new Set(prev);
-      for (const g of groupedByApp) {
-        if (!next.has(g.appName)) next.add(g.appName);
-      }
-      return next;
-    });
-  }, [groupedByApp]);
-
+  // toggles
   const toggleApp = (appName) => {
     setExpandedApps(prev => {
       const next = new Set(prev);
@@ -290,7 +284,6 @@ export default function ActivityOverview({ activities: propActivities }) {
       return next;
     });
   };
-
   const expandAll = () => setExpandedApps(new Set(groupedByApp.map(g => g.appName)));
   const collapseAll = () => setExpandedApps(new Set());
 
@@ -306,7 +299,6 @@ export default function ActivityOverview({ activities: propActivities }) {
 
   const clearSearch = () => setSearchQuery("");
 
-  // keyboard handler helper
   const onKeyToggle = (e, appName) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
@@ -314,24 +306,106 @@ export default function ActivityOverview({ activities: propActivities }) {
     }
   };
 
-  // render helpers for subrows container style
+  // container style with padding/margin reduction when collapsed
   const getContainerStyle = (appName, expanded) => {
     const measured = measuredHeights.current.get(appName) || 0;
     const max = expanded ? measured + 12 : 0;
     return {
       maxHeight: `${max}px`,
-      transition: "max-height 320ms cubic-bezier(.2,.9,.2,1), opacity 240ms ease",
+      transition: "max-height 320ms cubic-bezier(.2,.9,.2,1), opacity 240ms ease, padding 220ms ease, margin 220ms ease",
       opacity: expanded ? 1 : 0,
-      overflow: "hidden"
+      overflow: "hidden",
+      padding: expanded ? "10px 14px" : "0 14px",
+      margin: expanded ? "8px 12px 12px 12px" : "0"
     };
   };
 
-  // render
+  // helper to render avatars and collapsed list
+  const renderUsersInline = (usersArr) => {
+    const maxShow = 2;
+    const shown = usersArr.slice(0, maxShow);
+    const remaining = Math.max(0, usersArr.length - maxShow);
+    const remainingNames = usersArr.slice(maxShow).join(", ");
+    return (
+      <div className="users-inline" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          {shown.map((u, i) => (
+            <div key={u + "_" + i} className="avatar" title={u} style={{ background: COLOR_PALETTE[hashStringToIndex(u, COLOR_PALETTE.length)] }}>
+              {initials(u)}
+            </div>
+          ))}
+        </div>
+        <div style={{ fontSize: 12, color: "#64748b" }}>
+          {usersArr.length === 0 ? "" : (
+            remaining > 0 ? (
+              <span title={remainingNames}>{shown.join(", ")} +{remaining}</span>
+            ) : (
+              <span>{shown.join(", ")}</span>
+            )
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // FilterBar same order as requested
+  const FilterBar = () => (
+    <div className="ao-filterbar" aria-label="Filters">
+      <div className="ao-filter-item">
+        <label className="ao-filter-label">User</label>
+        <select className="ao-filter-select" value={selectedUser} onChange={(e) => setSelectedUser(e.target.value)}>
+          {users.map(u => <option key={u} value={u}>{u}</option>)}
+        </select>
+      </div>
+
+      <div className="ao-filter-item">
+        <label className="ao-filter-label">Date</label>
+        <select className="ao-filter-select" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)}>
+          <option value="All">All</option>
+          <option value="Today">Today</option>
+          <option value="LastMonth">Last Month</option>
+          <option value="Last6Months">Last 6 Months</option>
+        </select>
+      </div>
+
+      <div className="ao-filter-item">
+        <label className="ao-filter-label">App</label>
+        <select className="ao-filter-select" onChange={(e) => {
+          const v = e.target.value;
+          if (v === "All") { refresh(); return; }
+          const filtered = (internalActivities || []).filter(it => (it.app_name ?? it.app) === v);
+          setInternalActivities(filtered);
+        }}>
+          <option value="All">All</option>
+          {appList.map(a => <option key={a} value={a}>{a}</option>)}
+        </select>
+      </div>
+
+      <div className="ao-filter-item ao-filter-search" role="search" aria-label="Search activities">
+        <label className="ao-filter-label" style={{ visibility: "hidden", height: 0 }}>Search</label>
+        <input
+          className="ao-search-input"
+          placeholder="Search app, window title, notes..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Escape") clearSearch(); }}
+        />
+        {searchQuery ? <button className="ao-clear" onClick={clearSearch} aria-label="Clear search">✕</button> : null}
+      </div>
+
+      <div className="ao-filter-actions" role="toolbar" aria-label="Actions">
+        <button className="ao-action-btn" onClick={expandAll} title="Expand all">Expand all</button>
+        <button className="ao-action-btn" onClick={collapseAll} title="Collapse all">Collapse all</button>
+        <button className="ao-action-btn primary" onClick={refresh} title="Refresh">{loading ? "Refreshing..." : "Refresh"}</button>
+      </div>
+    </div>
+  );
+
   return (
     <section className="ao-card" style={{ marginTop: 12 }}>
-      <div className="ao-header">
+      <div className="ao-header" style={{ alignItems: "flex-start" }}>
         <div style={{ flex: 1 }}>
-          <div className="ao-top">
+          <div className="ao-top" style={{ alignItems: "center" }}>
             <div className="ao-pulse" style={{ background: groupedByApp.length ? colorMap[groupedByApp[0].appName] || COLOR_PALETTE[0] : "#9CA3AF" }}>
               {groupedByApp.length ? (groupedByApp[0].appName[0] || "A").toUpperCase() : "—"}
             </div>
@@ -343,70 +417,18 @@ export default function ActivityOverview({ activities: propActivities }) {
               </div>
             </div>
           </div>
+
+          <FilterBar />
         </div>
 
-        <div style={{ display: "flex", gap: 8, alignItems: "center", marginLeft: "auto" }}>
-          <button onClick={expandAll} style={{ padding: "6px 8px", borderRadius: 8, border: "1px solid #e6e9ef", background: "white", cursor: "pointer" }}>Expand all</button>
-          <button onClick={collapseAll} style={{ padding: "6px 8px", borderRadius: 8, border: "1px solid #e6e9ef", background: "white", cursor: "pointer" }}>Collapse all</button>
-          <div className="ao-pill" title="Top app">
+        <div style={{ marginLeft: 12, minWidth: 160, display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-end" }}>
+          <div className="ao-pill" title="Top app" style={{ background: "linear-gradient(90deg,#6C5CE7,#0984E3)", color: "white", padding: "6px 10px", borderRadius: 999 }}>
             {groupedByApp.length ? `${groupedByApp[0].appName} • ${Math.round((groupedByApp[0].totalDuration / Math.max(1, totalDurationAll)) * 100)}%` : "No usage"}
           </div>
-          <button onClick={refresh} style={{ padding: "8px 12px", borderRadius: 8, border: "none", background: "#111827", color: "white", cursor: "pointer" }}>
-            {loading ? "Refreshing..." : "Refresh"}
-          </button>
+          <div style={{ fontSize: 12, color: "#64748b" }}>{error ? <span style={{ color: "crimson" }}>{error}</span> : (loading ? "Loading…" : "Ready")}</div>
         </div>
       </div>
 
-      {/* filters + search */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12, gap: 12, flexWrap: "wrap" }}>
-        <div className="ao-filters">
-          <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <small style={{ color: "#334155" }}>User</small>
-            <select className="ao-filter-select" value={selectedUser} onChange={(e) => setSelectedUser(e.target.value)}>
-              {users.map(u => <option key={u} value={u}>{u}</option>)}
-            </select>
-          </label>
-
-          <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <small style={{ color: "#334155" }}>Date</small>
-            <select className="ao-filter-select" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)}>
-              <option value="All">All</option>
-              <option value="Today">Today</option>
-              <option value="LastMonth">Last Month</option>
-              <option value="Last6Months">Last 6 Months</option>
-            </select>
-          </label>
-
-          <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <small style={{ color: "#334155" }}>App</small>
-            <select className="ao-filter-select" onChange={(e) => {
-              const v = e.target.value;
-              if (v === "All") { refresh(); return; }
-              const filtered = (internalActivities || []).filter(it => (it.app_name ?? it.app) === v);
-              setInternalActivities(filtered);
-            }}>
-              <option value="All">All</option>
-              {appList.map(a => <option key={a} value={a}>{a}</option>)}
-            </select>
-          </label>
-        </div>
-
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <div className="ao-search" role="search">
-            <input
-              placeholder="Search app, window title, notes..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Escape") clearSearch(); }}
-            />
-            {searchQuery ? <button className="ao-clear" onClick={clearSearch} aria-label="Clear search">✕</button> : null}
-          </div>
-
-          <div style={{ marginLeft: 8, fontSize: 12, color: "#64748b" }}>{error ? <span style={{ color: "crimson" }}>{error}</span> : (loading ? "Loading…" : "Ready")}</div>
-        </div>
-      </div>
-
-      {/* grouped table or mobile cards with collapse/expand by clicking header (animated) */}
       <div className="table-wrap" style={{ marginTop: 12 }}>
         {isMobile ? (
           <div className="ao-card-list">
@@ -434,7 +456,7 @@ export default function ActivityOverview({ activities: propActivities }) {
                         <div style={{ fontWeight: 800, fontSize: 16 }}>{highlightNodes(app.appName, q)}</div>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                           <div style={{ fontWeight: 800 }}>{formatDuration(app.totalDuration)}</div>
-                          <div style={{ fontSize: 13, color: "#64748b" }}>{expanded ? "▾" : "▸"}</div>
+                          <div className={`caret ${expanded ? "rotated" : ""}`} aria-hidden>{expanded ? "▾" : "▸"}</div>
                         </div>
                       </div>
                       <div style={{ marginTop: 6, color: "#475569", fontSize: 13 }}>{app.windows.length} window(s)</div>
@@ -447,18 +469,29 @@ export default function ActivityOverview({ activities: propActivities }) {
                     style={getContainerStyle(app.appName, expanded)}
                   >
                     <div className="subrows-inner">
-                      {app.windows.map((w, wi) => (
-                        <div key={w.title + "_" + wi} className="subrow">
-                          <div className="subrow-left">
-                            <div className="subrow-title">{highlightNodes(w.title, q)}</div>
-                            <div className="subrow-meta">
-                              {w.lastSeen ? new Date(w.lastSeen).toLocaleString() : "-"}
-                              {w.users && w.users.length ? ` • ${w.users.length === 1 ? "User: " : "Users: "}${w.users.join(", ")}` : ""}
+                      {app.windows.map((w, wi) => {
+                        const delayMs = wi * 50;
+                        return (
+                          <div
+                            key={w.title + "_" + wi}
+                            className={`subrow ${expanded ? "animated" : ""}`}
+                            style={expanded ? { animationDelay: `${delayMs}ms` } : {}}
+                          >
+                            <div className="subrow-left">
+                              <div className="subrow-title">{highlightNodes(w.title, q)}</div>
+                              <div className="subrow-meta">
+                                {w.lastSeen ? new Date(w.lastSeen).toLocaleString() : "-"}
+                                {w.users && w.users.length ? (
+                                  <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                                    • {renderUsersInline(w.users)}
+                                  </span>
+                                ) : null}
+                              </div>
                             </div>
+                            <div className="subrow-right">{formatDuration(w.totalDuration)}</div>
                           </div>
-                          <div className="subrow-right">{formatDuration(w.totalDuration)}</div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
@@ -466,13 +499,20 @@ export default function ActivityOverview({ activities: propActivities }) {
             })}
           </div>
         ) : (
+          // Desktop table: responsive, no horizontal scroll
           <table className="activity-table" role="table">
+            <colgroup>
+              <col style={{ width: "28%" }} />
+              <col style={{ width: "48%" }} />
+              <col style={{ width: "14%" }} />
+              <col style={{ width: "10%" }} />
+            </colgroup>
             <thead>
               <tr>
-                <th style={{ width: "30%" }} onClick={() => requestSort("app_name")}>App {getSortIndicator("app_name")}</th>
-                <th style={{ width: "45%" }} onClick={() => requestSort("window_title")}>Window / Title {getSortIndicator("window_title")}</th>
-                <th style={{ width: "15%" }} onClick={() => requestSort("activity_date")}>Last Seen {getSortIndicator("activity_date")}</th>
-                <th style={{ width: "10%", textAlign: "right" }} onClick={() => requestSort("duration")}>Duration {getSortIndicator("duration")}</th>
+                <th onClick={() => requestSort("app_name")}>App {getSortIndicator("app_name")}</th>
+                <th onClick={() => requestSort("window_title")}>Window / Title {getSortIndicator("window_title")}</th>
+                <th onClick={() => requestSort("activity_date")}>Last Seen {getSortIndicator("activity_date")}</th>
+                <th style={{ textAlign: "right" }} onClick={() => requestSort("duration")}>Duration {getSortIndicator("duration")}</th>
               </tr>
             </thead>
             <tbody>
@@ -490,13 +530,13 @@ export default function ActivityOverview({ activities: propActivities }) {
                       tabIndex={0}
                       aria-expanded={expanded}
                     >
-                      <td colSpan={2} style={{ padding: "14px 12px", fontWeight: 800, fontSize: 15 }}>
+                      <td colSpan={2} style={{ padding: "12px 12px", fontWeight: 800, fontSize: 15 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                           <div style={{ width: 36, height: 36, borderRadius: 8, background: colorMap[app.appName] || COLOR_PALETTE[0], display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: 800 }}>
                             {app.appName[0] ? app.appName[0].toUpperCase() : "A"}
                           </div>
-                          <div>
-                            <div>{highlightNodes(app.appName, q)}</div>
+                          <div style={{ minWidth: 0 }}>
+                            <div className="app-name-trunc">{highlightNodes(app.appName, q)}</div>
                             <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>{app.windows.length} window(s)</div>
                           </div>
                         </div>
@@ -506,7 +546,7 @@ export default function ActivityOverview({ activities: propActivities }) {
                       <td style={{ verticalAlign: "middle", textAlign: "right", fontFamily: "monospace", fontWeight: 800 }}>
                         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, alignItems: "center" }}>
                           <div>{formatDuration(app.totalDuration)}</div>
-                          <div style={{ fontSize: 14, color: "#475569" }}>{expanded ? "▾" : "▸"}</div>
+                          <div className={`caret ${expanded ? "rotated" : ""}`} aria-hidden>{expanded ? "▾" : "▸"}</div>
                         </div>
                       </td>
                     </tr>
@@ -520,18 +560,29 @@ export default function ActivityOverview({ activities: propActivities }) {
                           style={getContainerStyle(app.appName, expanded)}
                         >
                           <div className="subrows-inner">
-                            {app.windows.map((w, wi) => (
-                              <div key={app.appName + "__" + w.title + "_" + wi} className="subrow">
-                                <div className="subrow-left">
-                                  <div className="subrow-title">{highlightNodes(w.title, q)}</div>
-                                  <div className="subrow-meta">
-                                    {w.lastSeen ? new Date(w.lastSeen).toLocaleString() : "-"}
-                                    {w.users && w.users.length ? ` • ${w.users.length === 1 ? "User: " : "Users: "}${w.users.join(", ")}` : ""}
+                            {app.windows.map((w, wi) => {
+                              const delayMs = wi * 50;
+                              return (
+                                <div
+                                  key={app.appName + "__" + w.title + "_" + wi}
+                                  className={`subrow ${expanded ? "animated" : ""}`}
+                                  style={expanded ? { animationDelay: `${delayMs}ms` } : {}}
+                                >
+                                  <div className="subrow-left">
+                                    <div className="subrow-title">{highlightNodes(w.title, q)}</div>
+                                    <div className="subrow-meta">
+                                      {w.lastSeen ? new Date(w.lastSeen).toLocaleString() : "-"}
+                                      {w.users && w.users.length ? (
+                                        <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                                          • {renderUsersInline(w.users)}
+                                        </span>
+                                      ) : null}
+                                    </div>
                                   </div>
+                                  <div className="subrow-right">{formatDuration(w.totalDuration)}</div>
                                 </div>
-                                <div className="subrow-right">{formatDuration(w.totalDuration)}</div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
                       </td>
