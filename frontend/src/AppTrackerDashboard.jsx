@@ -367,40 +367,7 @@ function AppTrackerDashboard({ activities: propActivities = [] }) {
       </div>
 
       {/* Activity Overview table (scrollable) */}
-      <section className="dashboard-card" style={{ marginTop: 12 }}>
-        <div className="dashboard-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-          <div>
-            <h3 className="dashboard-title">Activity Overview</h3>
-            <div className="dashboard-sub" style={{ marginTop: 6 }}>
-              <span className="sub-pill">Rows: <strong>{sortedActivities.length}</strong></span>
-              <span className="sub-pill muted">Duration: <strong>{formatDuration(totalDuration)}</strong></span>
-            </div>
-          </div>
-        </div>
-
-        <div className="table-wrap" style={{ marginTop: 8 }}>
-          <table className="activity-table enhanced">
-            <thead>
-              <tr>
-                <th onClick={() => requestSort("app_name")}>App {getSortIndicator("app_name")}</th>
-                <th onClick={() => requestSort("window_title")}>Window Title {getSortIndicator("window_title")}</th>
-                <th onClick={() => requestSort("duration")}>Duration {getSortIndicator("duration")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedActivities.length === 0 ? (
-                <tr className="empty-row"><td colSpan="3" className="empty-cell">No activities found — try different filters.</td></tr>
-              ) : sortedActivities.map((act, idx) => (
-                <tr key={act.id ?? act.timestamp ?? idx}>
-                  <td className="mono">{act.app_name ?? act.app ?? act.appName}</td>
-                  <td>{act.window_title ?? act.windowTitle ?? ""}</td>
-                  <td className="mono">{formatDuration(getDurationSeconds(act))}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      
     </div>
   );
 }

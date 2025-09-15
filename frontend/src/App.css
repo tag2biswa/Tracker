@@ -29,18 +29,6 @@ code {
   margin-top: 12px;
 }
 
-/* Left panel (dashboard) 
-.dashboard-wrapper {
-  flex: 0 0 60%;
-  max-width: 90%;
-}*/
-
-/* Right panel 
-.right-panel {
-  flex: 0 0 40%;
-  max-width: 40%;
-}*/
-
 /* Dashboard card */
 .dashboard-card {
   background: #fff;
@@ -644,15 +632,6 @@ body {
   margin-top: 8px;
 }
 
-/* Make left panel a column so top-cards + activity card stack vertically,
-   and allow the activity card to expand to a reasonable height */
-.dashboard-wrapper {
-  flex: 0 0 60%;
-  max-width: 90%;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
 
 /* Top cards row should not scroll — keep its natural height */
 .top-cards-row {
@@ -692,13 +671,6 @@ body {
 .table-wrap::-webkit-scrollbar-thumb {
   background: rgba(0,0,0,0.12);
   border-radius: 8px;
-}
-
-/* Keep right-panel independent (so it's not affected by left panel scroll) */
-.right-panel {
-  flex: 0 0 40%;
-  max-width: 40%;
-  align-self: flex-start;
 }
 
 /* Optional: ensure the sticky title doesn't cover content when small screens */

@@ -1,13 +1,18 @@
+// src/TrackedIdentifiersManager.jsx
 import React, { useState, useEffect } from "react";
 import ConfirmModal from "./ConfirmModal";
 import { USE_DUMMY_DATA } from "./config";
+import "./TrackedIdentifiersManager.css"; // optional: create or adapt styles
 
 /**
  * TrackedIdentifiersManager
- * - Shows tracked apps (dummy or real backend)
- * - Only a prominent Delete button (no edit)
+ *
+ * Props:
+ *  - showHeader (boolean) default true: when false, hides the "Enter App name to be tracked" heading + input area.
+ *  - compact (boolean) default false: when true, uses a compact card style suitable for sidebars.
+ *  - refreshKey (any) optional: when changed, triggers a refresh from the server.
  */
-function TrackedIdentifiersManager() {
+function TrackedIdentifiersManager({ showHeader = true, compact = false, refreshKey }) {
   const [apps, setApps] = useState([]);
   const [input, setInput] = useState("");
   const [showModal, setShowModal] = useState(false);
@@ -24,7 +29,14 @@ function TrackedIdentifiersManager() {
     } else {
       fetchTrackedIdentifiers();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // re-fetch when external refreshKey changes
+  useEffect(() => {
+    if (!USE_DUMMY_DATA) fetchTrackedIdentifiers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshKey]);
 
   const fetchTrackedIdentifiers = async () => {
     setLoading(true);
@@ -64,7 +76,10 @@ function TrackedIdentifiersManager() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ identifier: val }),
       });
-      if (!response.ok) throw new Error("Failed to add identifier");
+      if (!response.ok) {
+        const txt = await response.text();
+        throw new Error(txt || "Failed to add identifier");
+      }
       setApps((prev) => [val, ...prev]);
       setInput("");
       setError(null);
@@ -93,7 +108,10 @@ function TrackedIdentifiersManager() {
       const response = await fetch(`/tracked-identifiers/${encodeURIComponent(appToDelete)}`, {
         method: "DELETE",
       });
-      if (!response.ok) throw new Error("Failed to delete identifier");
+      if (!response.ok) {
+        const txt = await response.text();
+        throw new Error(txt || "Failed to delete identifier");
+      }
       setApps((prev) => prev.filter((a) => a !== appToDelete));
       setAppToDelete(null);
       setShowModal(false);
@@ -106,119 +124,104 @@ function TrackedIdentifiersManager() {
 
   const filtered = apps.filter((a) => a.toLowerCase().includes(search.toLowerCase()));
 
+  // small helpers for UI
+  const containerClass = compact ? "tim-ids compact" : "tim-ids";
+  const emptyStateText = USE_DUMMY_DATA ? "No tracked apps (dummy). Add one above." : "No tracked apps. Add one above ✨";
+
   return (
-    <aside className="right-panel">
-      <div className="right-card">
-        <h4 className="right-title">Enter App name to be tracked</h4>
-
-        <form className="tracked-form" onSubmit={handleSubmit}>
-          <div className="input-row">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="e.g., Chrome, VSCode, Slack"
-              aria-label="App name to track"
-            />
-            <button className="btn primary" type="submit">
-              Add
-            </button>
-          </div>
-
-          {error && (
-            <div className="error-msg" role="alert" style={{ marginTop: 8 }}>
-              {error}
+    <div className={containerClass} role="region" aria-label="Tracked apps manager">
+      <div className="tim-card">
+        {/* Header and Add form (can be hidden by showHeader) */}
+        {showHeader && (
+          <>
+            <div className="tim-header">
+              <h4 className="tim-title">Enter App name to be tracked</h4>
+              <div className="tim-sub">Track apps/windows so they appear in activity summaries.</div>
             </div>
-          )}
-        </form>
 
-        <div className="search-row" style={{ marginTop: 12 }}>
+            <form className="tim-form" onSubmit={handleSubmit} aria-label="Add tracked app">
+              <div className="tim-input-row">
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="e.g., Chrome, VSCode, Slack"
+                  aria-label="App name to track"
+                />
+                <button className="tim-btn primary" type="submit" aria-label="Add tracked app">
+                  Add
+                </button>
+              </div>
+
+              {error && (
+                <div className="tim-error" role="alert" style={{ marginTop: 8 }}>
+                  {error}
+                </div>
+              )}
+            </form>
+          </>
+        )}
+
+        {/* Search + refresh */}
+        <div className="tim-controls" style={{ marginTop: showHeader ? 12 : 0 }}>
           <input
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search tracked apps..."
             aria-label="Search tracked apps"
+            className="tim-search"
           />
-          <button
-            className="btn ghost"
-            onClick={() => {
-              if (USE_DUMMY_DATA) {
-                setApps(DUMMY_APPS);
-                setError(null);
-              } else {
-                fetchTrackedIdentifiers();
-              }
-            }}
-            type="button"
-            title="Refresh"
-          >
-            ⟳
-          </button>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              className="tim-btn ghost"
+              onClick={() => {
+                if (USE_DUMMY_DATA) {
+                  setApps(DUMMY_APPS);
+                  setError(null);
+                } else {
+                  fetchTrackedIdentifiers();
+                }
+              }}
+              type="button"
+              title="Refresh"
+              aria-label="Refresh tracked apps"
+            >
+              ⟳
+            </button>
+          </div>
         </div>
 
-        <div className="list-scroll" style={{ marginTop: 12 }}>
-          {loading && <div className="loader">Loading…</div>}
-          {!loading && filtered.length === 0 && <div className="empty-state">No tracked apps. Add one above ✨</div>}
+        {/* List */}
+        <div className="tim-list" style={{ marginTop: 12 }}>
+          {loading && <div className="tim-loader">Loading…</div>}
+
+          {!loading && filtered.length === 0 && (
+            <div className="tim-empty">{emptyStateText}</div>
+          )}
 
           {!loading &&
             filtered.map((app, i) => (
-              <div className="app-card" key={app + i}>
-                <div>
-                  <div className="app-name">{app}</div>
-                  <div className="app-meta">Tracked</div>
+              <div className="tim-app-row" key={app + i}>
+                <div className="tim-app-info">
+                  <div className="tim-app-name">{app}</div>
+                  <div className="tim-app-meta">Tracked</div>
                 </div>
 
-                <div className="app-actions">
+                <div className="tim-app-actions">
                   <button
-                    className="btn danger"
+                    className="tim-btn danger"
                     onClick={() => confirmDelete(app)}
                     title={`Delete ${app}`}
                     aria-label={`Delete ${app}`}
                     type="button"
                   >
-                    <span className="icon" aria-hidden>
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                        focusable="false"
-                        role="img"
-                      >
-                        <path
-                          d="M3 6h18"
-                          stroke="white"
-                          strokeWidth="1.6"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                        <path
-                          d="M8 6v12a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V6"
-                          stroke="white"
-                          strokeWidth="1.6"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                        <path
-                          d="M10 11v5M14 11v5"
-                          stroke="white"
-                          strokeWidth="1.6"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                        <path
-                          d="M10 6V4a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v2"
-                          stroke="white"
-                          strokeWidth="1.6"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </span>
-
-                    <span className="btn-label">Delete</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+                      <path d="M3 6h18" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M8 6v12a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V6" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M10 11v5M14 11v5" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    <span className="sr-only">Delete</span>
                   </button>
                 </div>
               </div>
@@ -226,6 +229,7 @@ function TrackedIdentifiersManager() {
         </div>
       </div>
 
+      {/* Confirm modal */}
       {showModal && (
         <ConfirmModal
           title="Confirm Deletion"
@@ -234,7 +238,7 @@ function TrackedIdentifiersManager() {
           onCancel={() => setShowModal(false)}
         />
       )}
-    </aside>
+    </div>
   );
 }
 

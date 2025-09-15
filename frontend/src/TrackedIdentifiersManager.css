@@ -1,0 +1,35 @@
+/* src/TrackedIdentifiersManager.css */
+.tim-ids { width: 100%; box-sizing: border-box; }
+.tim-ids.compact { max-width: 320px; }
+
+.tim-card {
+  background: white;
+  border: 1px solid #eef2f7;
+  border-radius: 10px;
+  padding: 14px;
+  box-shadow: 0 6px 18px rgba(12,18,32,0.04);
+}
+
+.tim-header { margin-bottom: 8px; }
+.tim-title { margin: 0; font-size: 1rem; font-weight: 800; }
+.tim-sub { color: #6b7280; font-size: 12px; margin-top: 6px; }
+
+.tim-form { margin-top: 8px; }
+.tim-input-row { display:flex; gap:8px; align-items:center; }
+.tim-input-row input { flex:1; padding:8px 10px; border:1px solid #e6e9ef; border-radius:8px; }
+.tim-btn { padding:8px 10px; border-radius:8px; border:1px solid transparent; background:transparent; cursor:pointer; font-weight:700; }
+.tim-btn.primary { background: linear-gradient(90deg,#6C5CE7,#0984E3); color:white; border:none; }
+.tim-btn.ghost { background:transparent; border:1px solid #eef2f7; }
+
+.tim-controls { display:flex; gap:8px; align-items:center; }
+.tim-search { flex:1; padding:8px 10px; border-radius:8px; border:1px solid #eef2f7; }
+
+.tim-list { max-height: 42vh; overflow:auto; padding-right:6px; }
+.tim-app-row { display:flex; justify-content:space-between; align-items:center; padding:10px; border-radius:8px; gap:12px; }
+.tim-app-row + .tim-app-row { margin-top:8px; }
+.tim-app-name { font-weight:700; }
+.tim-app-meta { font-size:12px; color:#6b7280; margin-top:4px; }
+
+.tim-empty { padding: 12px; color: #6b7280; }
+.tim-loader { padding: 12px; color: #6b7280; text-align:center; }
+.tim-error { color: crimson; font-size: 13px; }
