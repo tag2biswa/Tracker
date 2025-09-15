@@ -420,13 +420,6 @@ export default function ActivityOverview({ activities: propActivities }) {
 
           <FilterBar />
         </div>
-
-        <div style={{ marginLeft: 12, minWidth: 160, display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-end" }}>
-          <div className="ao-pill" title="Top app" style={{ background: "linear-gradient(90deg,#6C5CE7,#0984E3)", color: "white", padding: "6px 10px", borderRadius: 999 }}>
-            {groupedByApp.length ? `${groupedByApp[0].appName} • ${Math.round((groupedByApp[0].totalDuration / Math.max(1, totalDurationAll)) * 100)}%` : "No usage"}
-          </div>
-          <div style={{ fontSize: 12, color: "#64748b" }}>{error ? <span style={{ color: "crimson" }}>{error}</span> : (loading ? "Loading…" : "Ready")}</div>
-        </div>
       </div>
 
       <div className="table-wrap" style={{ marginTop: 12 }}>

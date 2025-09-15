@@ -53,41 +53,6 @@ export default function HomeDashboard() {
           <h1 className="banner-title">Home Dashboard</h1>
           <p className="banner-sub">Insights • Activity • Tracking</p>
         </div>
-
-        <div className="banner-controls">
-          <div className="search-mini" title="Search navigation">
-            <svg viewBox="0 0 24 24" className="icon-search" aria-hidden>
-              <path d="M21 21l-4.35-4.35"></path>
-              <circle cx="11" cy="11" r="6"></circle>
-            </svg>
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search nav..."
-              aria-label="Search navigation"
-              className="banner-search"
-            />
-            {search && (
-              <button
-                className="clear"
-                onClick={() => setSearch("")}
-                aria-label="Clear search"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-
-          <button
-            className="toggle-drawer"
-            onClick={() => setCollapsed((s) => !s)}
-            aria-pressed={collapsed}
-            aria-label={collapsed ? "Expand navigation" : "Collapse navigation"}
-            title={collapsed ? "Expand" : "Collapse"}
-          >
-            {collapsed ? "☰" : "▾"}
-          </button>
-        </div>
       </header>
 
       <aside className="drawer" aria-label="Primary navigation">
