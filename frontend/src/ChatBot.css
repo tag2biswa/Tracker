@@ -1,0 +1,119 @@
+/* src/styles/ChatBot.css
+   Dedicated styles for ChatBot page
+   Keep consistent with ActivityOverview theme but scoped to .cb-*
+*/
+
+.cb-card {
+  background: linear-gradient(180deg, #ffffff 0%, #fbfbff 100%);
+  border-radius: 14px;
+  box-shadow: 0 8px 28px rgba(12,18,32,0.06);
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.cb-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.cb-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.cb-sub {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.cb-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.cb-btn {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #e6e9ef;
+  background: white;
+  font-weight: 700;
+  font-size: 13px;
+  color: #071427;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(12,18,32,0.03);
+}
+
+.cb-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(12,18,32,0.06);
+}
+
+.cb-btn.primary {
+  background: linear-gradient(90deg, #6C5CE7, #0984E3);
+  color: white;
+  border: none;
+  box-shadow: 0 12px 36px rgba(12,18,32,0.10);
+}
+
+.cb-messages {
+  height: 420px;
+  overflow: auto;
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid #eef2f7;
+  background: #fbfdff;
+}
+
+.cb-message {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 10px;
+  align-items: flex-start;
+}
+
+.cb-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.cb-avatar.bot { background: #111827; color: white; }
+.cb-avatar.user { background: #e6eefc; color: #0f172a; }
+
+.cb-message-body {
+  flex: 1;
+}
+
+.cb-message-author {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.cb-message-text {
+  margin-top: 6px;
+  white-space: pre-wrap;
+  line-height: 1.45;
+  color: #0f172a;
+}
+
+.cb-input-area {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.cb-input {
+  flex: 1;
+  padding: 10px;
+  min-height: 48px;
+  border-radius: 8px;
+  border: 1px solid #e6e9ef;
+  resize: vertical;
+}
